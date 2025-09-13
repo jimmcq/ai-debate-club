@@ -149,24 +149,57 @@ export async function fetchWithRetry(
 }
 
 /**
+ * Circuit breaker states
+ */
+export enum CircuitState {
+    CLOSED = 'closed',
+    OPEN = 'open',
+    HALF_OPEN = 'half-open'
+}
+
+/**
+ * Circuit breaker configuration
+ */
+export interface CircuitBreakerConfig {
+    failureThreshold: number;
+    recoveryTimeout: number;
+    monitoringPeriod: number;
+}
+
+/**
+ * Circuit breaker health information
+ */
+export interface CircuitBreakerHealth {
+    state: CircuitState;
+    failureCount: number;
+    lastFailureTime: Date | null;
+    nextAttemptTime: Date | null;
+}
+
+/**
  * Circuit breaker pattern for failing services
  */
 export class CircuitBreaker {
     private failures = 0;
     private lastFailureTime = 0;
-    private state: 'closed' | 'open' | 'half-open' = 'closed';
+    private state: CircuitState = CircuitState.CLOSED;
+    private config: CircuitBreakerConfig;
 
-    constructor(
-        private failureThreshold = 5,
-        private recoveryTimeout = 60000 // 1 minute
-    ) {}
+    constructor(config: Partial<CircuitBreakerConfig> = {}) {
+        this.config = {
+            failureThreshold: 5,
+            recoveryTimeout: 60000, // 1 minute
+            monitoringPeriod: 10000, // 10 seconds
+            ...config
+        };
+    }
 
     async execute<T>(operation: () => Promise<T>): Promise<T> {
-        if (this.state === 'open') {
-            if (Date.now() - this.lastFailureTime > this.recoveryTimeout) {
-                this.state = 'half-open';
+        if (this.state === CircuitState.OPEN) {
+            if (Date.now() - this.lastFailureTime > this.config.recoveryTimeout) {
+                this.state = CircuitState.HALF_OPEN;
             } else {
-                throw new Error('Circuit breaker is open - service unavailable');
+                throw new Error('Circuit breaker is open');
             }
         }
 
@@ -182,25 +215,36 @@ export class CircuitBreaker {
 
     private onSuccess(): void {
         this.failures = 0;
-        this.state = 'closed';
+        this.state = CircuitState.CLOSED;
     }
 
     private onFailure(): void {
         this.failures++;
         this.lastFailureTime = Date.now();
 
-        if (this.failures >= this.failureThreshold) {
-            this.state = 'open';
+        if (this.failures >= this.config.failureThreshold) {
+            this.state = CircuitState.OPEN;
         }
     }
 
-    getState(): string {
+    getState(): CircuitState {
         return this.state;
+    }
+
+    getHealth(): CircuitBreakerHealth {
+        return {
+            state: this.state,
+            failureCount: this.failures,
+            lastFailureTime: this.lastFailureTime ? new Date(this.lastFailureTime) : null,
+            nextAttemptTime: this.state === CircuitState.OPEN
+                ? new Date(this.lastFailureTime + this.config.recoveryTimeout)
+                : null
+        };
     }
 
     reset(): void {
         this.failures = 0;
         this.lastFailureTime = 0;
-        this.state = 'closed';
+        this.state = CircuitState.CLOSED;
     }
 }

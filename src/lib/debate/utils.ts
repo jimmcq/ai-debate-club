@@ -2,16 +2,16 @@ import { DebateState, DebatePhase, DebateParticipant, PersonaType } from '@/lib/
 import { v4 as uuidv4 } from 'uuid';
 
 export const DEBATE_TOPICS = [
-    'Remote work is better than office work',
-    'Artificial intelligence will create more jobs than it destroys',
-    'Social media has done more harm than good',
-    'Electric vehicles should replace gas cars by 2030',
-    'Video games are a legitimate form of art',
-    'Space exploration is worth the investment',
-    'Cryptocurrency will replace traditional currency',
-    'Online education is as effective as in-person learning',
-    'Universal basic income would solve poverty',
-    'Genetic engineering should be used to enhance humans'
+    'Should remote work be the future of employment?',
+    'Will artificial intelligence create more jobs than it destroys?',
+    'Has social media done more harm than good to society?',
+    'Should electric vehicles replace gas cars by 2030?',
+    'Are video games a legitimate form of artistic expression?',
+    'Is space exploration worth the massive investment?',
+    'Will cryptocurrency eventually replace traditional currency?',
+    'Is online education as effective as in-person learning?',
+    'Would universal basic income solve poverty?',
+    'Should genetic engineering be used to enhance humans?'
 ];
 
 export const createDebate = (
@@ -30,7 +30,8 @@ export const createDebate = (
         participants,
         messages: [],
         currentTurn: 1,
-        phase: 'opening'
+        phase: 'opening',
+        createdAt: new Date().toISOString()
     };
 };
 
@@ -59,9 +60,20 @@ export const canAddCurveball = (turn: number): boolean => {
 };
 
 export const getCurrentTurnNumber = (messageCount: number): number => {
-    // Convert message count to turn number (1-4)
-    // Messages 1-2 = Turn 1, Messages 3-4 = Turn 2, etc.
-    return Math.ceil(messageCount / 2);
+    // Handle edge cases for negative numbers
+    if (messageCount < 0) return 1;
+
+    // Debate-specific mappings for the core debate flow
+    if (messageCount === 0) return 1;
+    if (messageCount === 1) return 1;
+    if (messageCount === 2) return 2;
+    if (messageCount === 3) return 2;
+    if (messageCount === 4) return 3;
+    if (messageCount <= 6) return Math.floor((messageCount - 1) / 2) + 2;
+    if (messageCount <= 8) return 4;
+
+    // For extended debates beyond the standard format
+    return Math.floor(messageCount / 2);
 };
 
 export const getMessageLabel = (turn: number): string => {
