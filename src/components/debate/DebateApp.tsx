@@ -3,9 +3,13 @@
 import { useState } from 'react';
 import { DebateState, PersonaType } from '@/lib/types/debate';
 import { getRandomTopic } from '@/lib/debate/utils';
+import { useToast } from '@/components/ui/Toast';
+import { ErrorFactory, ValidationError, NetworkError } from '@/lib/errors/types';
+import { useErrorLogger, useApiLogger, useUserInteractionTracker, useComponentMonitor } from '@/lib/monitoring/hooks';
 import PersonaSelector from './PersonaSelector';
 import TopicInput from './TopicInput';
 import DebateView from './DebateView';
+import DebateErrorBoundary from './DebateErrorBoundary';
 
 export default function DebateApp() {
     const [currentDebate, setCurrentDebate] = useState<DebateState | null>(null);
@@ -13,40 +17,122 @@ export default function DebateApp() {
     const [topic, setTopic] = useState('');
     const [persona1, setPersona1] = useState<PersonaType>('logician');
     const [persona2, setPersona2] = useState<PersonaType>('showman');
+    const { showError, showSuccess } = useToast();
+
+    // Monitoring hooks
+    const { logError, logInfo } = useErrorLogger('DebateApp');
+    const { logApiCall } = useApiLogger();
+    const { trackClick, trackFormSubmit } = useUserInteractionTracker('DebateApp');
+    useComponentMonitor('DebateApp');
 
     const handleStartDebate = async () => {
-        if (!topic.trim()) return;
-        
+        // Validate input
+        if (!topic.trim()) {
+            const invalidTopicError = ErrorFactory.invalidTopic(topic);
+            logError(invalidTopicError, 'empty_topic_validation');
+            showError(invalidTopicError);
+            return;
+        }
+
+        if (topic.trim().length < 10) {
+            const validationError = new ValidationError('topic', 'Topic must be at least 10 characters long');
+            logError(validationError, 'topic_too_short_validation');
+            showError(validationError);
+            return;
+        }
+
+        if (topic.trim().length > 200) {
+            const validationError = new ValidationError('topic', 'Topic must be less than 200 characters');
+            logError(validationError, 'topic_too_long_validation');
+            showError(validationError);
+            return;
+        }
+
+        trackFormSubmit('debate_start', {
+            topic: topic.trim(),
+            persona1,
+            persona2,
+            topicLength: topic.trim().length
+        });
+
+        logInfo('Starting new debate', {
+            topic: topic.trim(),
+            persona1,
+            persona2,
+            topicLength: topic.trim().length
+        });
+
         setIsStarting(true);
         try {
-            const response = await fetch('/api/debate/start', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    topic: topic.trim(),
-                    persona1Type: persona1,
-                    persona2Type: persona2,
+            const response = await logApiCall(
+                'POST',
+                '/api/debate/start',
+                () => fetch('/api/debate/start', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        topic: topic.trim(),
+                        persona1Type: persona1,
+                        persona2Type: persona2,
+                    }),
                 }),
-            });
+                {
+                    topic: topic.trim(),
+                    persona1,
+                    persona2
+                }
+            );
 
             if (!response.ok) {
-                throw new Error('Failed to start debate');
+                if (response.status >= 500) {
+                    const networkError = new NetworkError(`Server error: ${response.status}`);
+                    logError(networkError, 'debate_start_server_error');
+                    throw networkError;
+                } else if (response.status === 429) {
+                    const rateLimitError = ErrorFactory.tooManyRequests();
+                    logError(rateLimitError, 'debate_start_rate_limit');
+                    throw rateLimitError;
+                } else {
+                    const errorData = await response.json().catch(() => ({}));
+                    const validationError = new ValidationError('debate setup', errorData.error || 'Invalid debate configuration');
+                    logError(validationError, 'debate_start_validation_error');
+                    throw validationError;
+                }
             }
 
             const debate: DebateState = await response.json();
             setCurrentDebate(debate);
+
+            logInfo('Debate started successfully', {
+                debateId: debate.id,
+                topic: debate.topic,
+                persona1Type: debate.participants[0].personaType,
+                persona2Type: debate.participants[1].personaType
+            });
+
+            showSuccess('Debate Started!', 'Your AI debate is ready to begin.');
+
         } catch (error) {
-            console.error('Error starting debate:', error);
-            alert('Failed to start debate. Please try again.');
+            if (error instanceof ValidationError || error instanceof NetworkError) {
+                showError(error, () => handleStartDebate());
+            } else {
+                const unexpectedError = ErrorFactory.unexpectedError(error as Error);
+                logError(unexpectedError, 'unexpected_debate_start_error');
+                showError(unexpectedError, () => handleStartDebate());
+            }
         } finally {
             setIsStarting(false);
         }
     };
 
     const handleRandomTopic = () => {
-        setTopic(getRandomTopic());
+        const randomTopic = getRandomTopic();
+        setTopic(randomTopic);
+
+        trackClick('random_topic_generator', { generatedTopic: randomTopic });
+        logInfo('User generated random topic', { topic: randomTopic });
     };
 
     const handleNewDebate = () => {
@@ -56,11 +142,13 @@ export default function DebateApp() {
 
     if (currentDebate) {
         return (
-            <DebateView 
-                debate={currentDebate} 
-                onUpdateDebate={setCurrentDebate}
-                onNewDebate={handleNewDebate}
-            />
+            <DebateErrorBoundary>
+                <DebateView
+                    debate={currentDebate}
+                    onUpdateDebate={setCurrentDebate}
+                    onNewDebate={handleNewDebate}
+                />
+            </DebateErrorBoundary>
         );
     }
 

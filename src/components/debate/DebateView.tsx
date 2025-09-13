@@ -4,6 +4,9 @@ import { useState } from 'react';
 import { DebateState } from '@/lib/types/debate';
 import { getPersonaConfig } from '@/lib/personas';
 import { canAddCurveball, isDebateComplete, getCurrentTurnNumber } from '@/lib/debate/utils';
+import { useToast } from '@/components/ui/Toast';
+import { ErrorFactory, AIServiceError, NetworkError } from '@/lib/errors/types';
+import { useErrorLogger, useApiLogger, useUserInteractionTracker, useComponentMonitor } from '@/lib/monitoring/hooks';
 import MessageDisplay from './MessageDisplay';
 import CurveballInput from './CurveballInput';
 
@@ -21,37 +24,117 @@ export default function DebateView({
     const [isGenerating, setIsGenerating] = useState(false);
     const [curveball, setCurveball] = useState('');
     const [winner, setWinner] = useState<'persona1' | 'persona2' | null>(null);
+    const [serviceUnavailable, setServiceUnavailable] = useState(false);
+    const { showError, showSuccess } = useToast();
+
+    // Monitoring hooks
+    const { logError, logInfo, logUserAction } = useErrorLogger('DebateView');
+    const { logApiCall } = useApiLogger();
+    const { trackClick } = useUserInteractionTracker('DebateView');
+    useComponentMonitor('DebateView');
 
     const persona1Config = getPersonaConfig(debate.participants[0].personaType);
     const persona2Config = getPersonaConfig(debate.participants[1].personaType);
 
     const handleNextMessage = async (curveballText?: string) => {
         setIsGenerating(true);
+
+        logInfo('Starting debate message generation', {
+            debateId: debate.id,
+            hasCurveball: !!curveballText,
+            currentTurn: debate.currentTurn,
+            messageCount: debate.messages.length
+        });
+
         try {
-            const response = await fetch('/api/debate/message', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    debateId: debate.id,
-                    curveball: curveballText?.trim() || undefined,
+            const response = await logApiCall(
+                'POST',
+                '/api/debate/message',
+                () => fetch('/api/debate/message', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        debateId: debate.id,
+                        curveball: curveballText?.trim() || undefined,
+                    }),
                 }),
-            });
+                {
+                    debateId: debate.id,
+                    hasCurveball: !!curveballText,
+                    currentTurn: debate.currentTurn
+                }
+            );
 
             if (!response.ok) {
-                throw new Error('Failed to generate message');
+                // Handle different error scenarios
+                if (response.status === 429) {
+                    const rateLimitError = ErrorFactory.tooManyRequests();
+                    logError(rateLimitError, 'rate_limit_exceeded');
+                    showError(rateLimitError, () => handleNextMessage(curveballText));
+                    return;
+                }
+
+                if (response.status >= 500) {
+                    // Server errors - AI service might be down
+                    setServiceUnavailable(true);
+                    const serviceError = new AIServiceError(
+                        `AI service unavailable (HTTP ${response.status})`,
+                        true
+                    );
+                    logError(serviceError, 'ai_service_unavailable');
+                    showError(
+                        serviceError,
+                        () => {
+                            setServiceUnavailable(false);
+                            handleNextMessage(curveballText);
+                        }
+                    );
+                    return;
+                }
+
+                // Other client errors
+                const errorData = await response.json().catch(() => ({}));
+                const clientError = new Error(errorData.error || 'Failed to generate message');
+                logError(clientError, 'api_client_error', { status: response.status });
+                throw clientError;
             }
 
             const data = await response.json();
             onUpdateDebate(data.debate);
-            
+
+            logInfo('Debate message generated successfully', {
+                debateId: debate.id,
+                newMessageCount: data.debate.messages.length,
+                hasCurveball: !!curveballText
+            });
+
             if (curveballText) {
                 setCurveball('');
+                logUserAction('curveball_applied', { curveballText });
+                showSuccess('Curveball Applied!', 'The debate just got more interesting.');
             }
+
+            // Reset service unavailable flag on success
+            if (serviceUnavailable) {
+                setServiceUnavailable(false);
+                logInfo('AI service restored after previous unavailability');
+                showSuccess('Service Restored', 'AI responses are working normally again.');
+            }
+
         } catch (error) {
-            console.error('Error generating message:', error);
-            alert('Failed to generate message. Please try again.');
+            if (error instanceof Error && error.message.includes('fetch')) {
+                // Network error - user might be offline
+                const networkError = new NetworkError('Unable to reach our servers');
+                logError(networkError, 'network_connection_failed', { originalError: error.message });
+                showError(networkError, () => handleNextMessage(curveballText));
+            } else {
+                // Unknown error
+                const unexpectedError = ErrorFactory.unexpectedError(error as Error);
+                logError(unexpectedError, 'unexpected_message_generation_error');
+                showError(unexpectedError, () => handleNextMessage(curveballText));
+            }
         } finally {
             setIsGenerating(false);
         }
@@ -59,6 +142,22 @@ export default function DebateView({
 
     const handleVote = (winnerId: 'persona1' | 'persona2') => {
         setWinner(winnerId);
+        const winnerName = winnerId === 'persona1' ? persona1Config.name : persona2Config.name;
+
+        logUserAction('debate_vote_cast', {
+            winnerId,
+            winnerName,
+            debateId: debate.id,
+            topic: debate.topic
+        });
+
+        logInfo('User voted in debate', {
+            debateId: debate.id,
+            winnerId,
+            winnerName,
+            totalMessages: debate.messages.length
+        });
+
         // In a real app, you might want to save this vote to the backend
     };
 
@@ -89,7 +188,10 @@ export default function DebateView({
                         </p>
                     </div>
                     <button
-                        onClick={onNewDebate}
+                        onClick={() => {
+                            trackClick('new_debate_header');
+                            onNewDebate();
+                        }}
                         className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors duration-200"
                     >
                         New Debate
@@ -151,7 +253,10 @@ export default function DebateView({
                     
                     <div className="text-center">
                         <button
-                            onClick={() => handleNextMessage()}
+                            onClick={() => {
+                                trackClick('continue_debate');
+                                handleNextMessage();
+                            }}
                             disabled={isGenerating}
                             className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-3 px-8 rounded-lg transition-colors duration-200"
                         >
@@ -170,13 +275,19 @@ export default function DebateView({
                     {!winner ? (
                         <div className="flex justify-center gap-4">
                             <button
-                                onClick={() => handleVote('persona1')}
+                                onClick={() => {
+                                    trackClick('vote_persona1', { personaName: persona1Config.name });
+                                    handleVote('persona1');
+                                }}
                                 className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
                             >
                                 {persona1Config.name}
                             </button>
                             <button
-                                onClick={() => handleVote('persona2')}
+                                onClick={() => {
+                                    trackClick('vote_persona2', { personaName: persona2Config.name });
+                                    handleVote('persona2');
+                                }}
                                 className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
                             >
                                 {persona2Config.name}
@@ -190,7 +301,10 @@ export default function DebateView({
                                 </strong>
                             </p>
                             <button
-                                onClick={onNewDebate}
+                                onClick={() => {
+                                    trackClick('new_debate_after_voting');
+                                    onNewDebate();
+                                }}
                                 className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors duration-200"
                             >
                                 Start New Debate
