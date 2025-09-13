@@ -2,7 +2,7 @@ import DebateApp from '@/components/debate/DebateApp';
 
 export default function Home() {
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
+        <div className="py-8">
             <DebateApp />
         </div>
     );
