@@ -19,6 +19,16 @@ A real-time web application that orchestrates structured debates between two dis
 - **Styling**: Tailwind CSS
 - **Deployment**: Vercel (Hobby Tier)
 
+## 🏗️ Architecture Deep Dive
+
+This project demonstrates production-grade architecture patterns:
+- **Resilience**: Circuit breakers, retry logic, graceful degradation
+- **Observability**: Structured logging, error tracking, performance monitoring
+- **Quality**: 152 focused tests, automated CI/CD, performance budgets
+- **Security**: CSP headers, input validation, secure API handling
+
+→ [Read the full Architecture Document](ARCHITECTURE.md)
+
 ## Getting Started
 
 ### Prerequisites
