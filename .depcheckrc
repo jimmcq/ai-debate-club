@@ -1,0 +1,23 @@
+{
+  "ignore-path": ".gitignore",
+  "skip-missing": false,
+  "ignore-dirs": [
+    "node_modules",
+    ".next",
+    "out",
+    "dist",
+    "build",
+    "coverage"
+  ],
+  "ignores": [
+    "@tailwindcss/postcss",
+    "@types/jest",
+    "@types/node",
+    "@types/node-fetch",
+    "eslint-config-next",
+    "jest-environment-jsdom",
+    "node-fetch",
+    "tailwindcss",
+    "depcheck"
+  ]
+}
