@@ -22,6 +22,7 @@ A real-time web application that orchestrates structured debates between two dis
 ## 🏗️ Architecture Deep Dive
 
 This project demonstrates production-grade architecture patterns:
+
 - **Resilience**: Circuit breakers, retry logic, graceful degradation
 - **Observability**: Structured logging, error tracking, performance monitoring
 - **Quality**: 152 focused tests, automated CI/CD, performance budgets
