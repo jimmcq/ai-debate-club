@@ -19,20 +19,20 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
-          cache: 'npm'
+          node-version: '20'
+          cache: 'yarn'
 
-      - name: Install npm-check-updates
-        run: npm install -g npm-check-updates
+      - name: Install yarn-upgrade-all
+        run: yarn global add yarn-upgrade-all
 
       - name: Update dependencies
-        run: ncu -u
+        run: yarn upgrade-all
 
       - name: Install updated dependencies
-        run: npm install
+        run: yarn install
 
       - name: Run tests
-        run: npm test
+        run: yarn test
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v5
@@ -46,7 +46,7 @@ jobs:
             This PR contains automated updates to project dependencies.
 
             ### Changes
-            - Updated npm packages to latest versions
+            - Updated yarn packages to latest versions
             - All tests are passing
 
             ### Review Checklist

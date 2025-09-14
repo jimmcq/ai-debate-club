@@ -26,7 +26,7 @@ Configure these secrets in your GitHub repository settings (`Settings > Secrets 
 1. **Install Vercel CLI:**
 
     ```bash
-    npm install -g vercel
+    yarn global add vercel
     ```
 
 2. **Login and Link Project:**
@@ -79,8 +79,8 @@ If you need to deploy manually:
 vercel --prod
 
 # Or deploy to other platforms
-npm run build
-npm start
+yarn build
+yarn start
 ```
 
 ## Quality Gates
@@ -130,22 +130,22 @@ The CI/CD pipeline enforces these quality standards:
 1. **Tests Failing:**
 
     ```bash
-    npm test
+    yarn test
     # Fix any failing tests before pushing
     ```
 
 2. **Build Failures:**
 
     ```bash
-    npm run build
+    yarn build
     # Check for TypeScript errors or missing dependencies
     ```
 
 3. **Lint Errors:**
 
     ```bash
-    npm run lint:fix
-    npm run format
+    yarn lint:fix
+    yarn format
     ```
 
 4. **Vercel Deployment Issues:**

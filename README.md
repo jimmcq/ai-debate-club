@@ -35,7 +35,7 @@ This project demonstrates production-grade architecture patterns:
 ### Prerequisites
 
 - Node.js 18.x or later
-- npm or yarn
+- Yarn package manager
 - Groq API key
 
 ### Installation
@@ -50,8 +50,6 @@ This project demonstrates production-grade architecture patterns:
 2. Install dependencies:
 
     ```bash
-    npm install
-    # or
     yarn install
     ```
 
@@ -70,8 +68,6 @@ This project demonstrates production-grade architecture patterns:
 4. Run the development server:
 
     ```bash
-    npm run dev
-    # or
     yarn dev
     ```
 
@@ -183,21 +179,21 @@ __tests__/
 
 ```bash
 # Run all tests
-npm test
+yarn test
 
 # Run tests with coverage
-npm run test:coverage
+yarn test:coverage
 
 # Run specific test types
-npm run test:unit         # Unit tests only
-npm run test:integration  # Integration tests only
-npm run test:component    # Component tests only
+yarn test:unit         # Unit tests only
+yarn test:integration  # Integration tests only
+yarn test:component    # Component tests only
 
 # Watch mode for development
-npm run test:watch
+yarn test:watch
 
 # CI mode (no watch, with coverage)
-npm run test:ci
+yarn test:ci
 ```
 
 #### Test Coverage
@@ -231,16 +227,12 @@ When adding new features:
 ### Building for Production
 
 ```bash
-npm run build
-# or
 yarn build
 ```
 
 ### Linting
 
 ```bash
-npm run lint
-# or
 yarn lint
 ```
 
@@ -260,7 +252,7 @@ This project is optimized for deployment on Vercel:
 1. **Connect to Vercel:**
 
     ```bash
-    npm install -g vercel
+    yarn global add vercel
     vercel
     ```
 
@@ -279,10 +271,10 @@ For other platforms:
 
 ```bash
 # Build the application
-npm run build
+yarn build
 
 # Start the production server
-npm start
+yarn start
 ```
 
 ### Environment Variables
@@ -321,8 +313,8 @@ The project includes a comprehensive CI/CD pipeline with:
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
 3. Make your changes following the coding standards
-4. Run tests and ensure they pass (`npm test`)
-5. Run linting and formatting (`npm run lint:fix && npm run format`)
+4. Run tests and ensure they pass (`yarn test`)
+5. Run linting and formatting (`yarn lint:fix && yarn format`)
 6. Commit your changes (triggers pre-commit hooks)
 7. Push to your branch (`git push origin feature/amazing-feature`)
 8. Open a Pull Request
