@@ -1,0 +1,52 @@
+{
+    "buildCommand": "npm run build",
+    "devCommand": "npm run dev",
+    "installCommand": "npm install",
+    "framework": "nextjs",
+    "env": {
+        "GROQ_API_KEY": "@groq-api-key"
+    },
+    "build": {
+        "env": {
+            "GROQ_API_KEY": "@groq-api-key"
+        }
+    },
+    "functions": {
+        "app/api/**/*.ts": {
+            "maxDuration": 30
+        }
+    },
+    "headers": [
+        {
+            "source": "/(.*)",
+            "headers": [
+                {
+                    "key": "X-Content-Type-Options",
+                    "value": "nosniff"
+                },
+                {
+                    "key": "X-Frame-Options",
+                    "value": "DENY"
+                },
+                {
+                    "key": "X-XSS-Protection",
+                    "value": "1; mode=block"
+                },
+                {
+                    "key": "Referrer-Policy",
+                    "value": "strict-origin-when-cross-origin"
+                },
+                {
+                    "key": "Content-Security-Policy",
+                    "value": "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://api.groq.com;"
+                }
+            ]
+        }
+    ],
+    "rewrites": [
+        {
+            "source": "/api/(.*)",
+            "destination": "/api/$1"
+        }
+    ]
+}

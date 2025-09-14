@@ -3,11 +3,8 @@
  * Provides realistic API mocking for integration tests
  */
 
-import { setupServer } from 'msw/node'
-import { debateHandlers } from './handlers/debate'
-import { errorHandlers } from './handlers/errors'
+import { setupServer } from 'msw/node';
+import { debateHandlers } from './handlers/debate';
+import { errorHandlers } from './handlers/errors';
 
-export const server = setupServer(
-  ...debateHandlers,
-  ...errorHandlers
-)
+export const server = setupServer(...debateHandlers, ...errorHandlers);

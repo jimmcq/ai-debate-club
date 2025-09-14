@@ -11,7 +11,7 @@ export const DEBATE_TOPICS = [
     'Will cryptocurrency eventually replace traditional currency?',
     'Is online education as effective as in-person learning?',
     'Would universal basic income solve poverty?',
-    'Should genetic engineering be used to enhance humans?'
+    'Should genetic engineering be used to enhance humans?',
 ];
 
 export const createDebate = (
@@ -21,7 +21,7 @@ export const createDebate = (
 ): DebateState => {
     const participants: DebateParticipant[] = [
         { id: 'persona1', personaType: persona1Type },
-        { id: 'persona2', personaType: persona2Type }
+        { id: 'persona2', personaType: persona2Type },
     ];
 
     return {
@@ -31,14 +31,14 @@ export const createDebate = (
         messages: [],
         currentTurn: 1,
         phase: 'opening',
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
     };
 };
 
 export const getDebatePhase = (turn: number): DebatePhase => {
-    if (turn <= 2) return 'opening';    // Messages 1-2: Opening statements
-    if (turn <= 6) return 'rebuttal';   // Messages 3-6: Rebuttals
-    if (turn <= 8) return 'closing';    // Messages 7-8: Closing statements
+    if (turn <= 2) return 'opening'; // Messages 1-2: Opening statements
+    if (turn <= 6) return 'rebuttal'; // Messages 3-6: Rebuttals
+    if (turn <= 8) return 'closing'; // Messages 7-8: Closing statements
     return 'complete';
 };
 

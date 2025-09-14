@@ -19,14 +19,14 @@ const CURVEBALL_SUGGESTIONS = [
     'Present your case as if talking to a child',
     'Argue using only scientific evidence',
     'Make your point through a personal story',
-    'Present the counterargument to your own position'
+    'Present the counterargument to your own position',
 ];
 
 export default function CurveballInput({
     curveball,
     onCurveballChange,
     onSubmitCurveball,
-    isGenerating
+    isGenerating,
 }: CurveballInputProps) {
     const [showSuggestions, setShowSuggestions] = useState(false);
 
@@ -43,13 +43,13 @@ export default function CurveballInput({
             <p className="text-sm text-gray-600 dark:text-gray-300">
                 Add a dynamic challenge to test the debaters&apos; adaptability (optional)
             </p>
-            
+
             <div className="space-y-2">
                 <div className="flex gap-2">
                     <input
                         type="text"
                         value={curveball}
-                        onChange={(e) => onCurveballChange(e.target.value)}
+                        onChange={e => onCurveballChange(e.target.value)}
                         placeholder="Enter a challenge or constraint for the next argument..."
                         className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                         maxLength={200}
@@ -61,7 +61,7 @@ export default function CurveballInput({
                         💡 Ideas
                     </button>
                 </div>
-                
+
                 {showSuggestions && (
                     <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 space-y-2">
                         <h5 className="font-medium text-gray-900 dark:text-white text-sm">
@@ -80,7 +80,7 @@ export default function CurveballInput({
                         </div>
                     </div>
                 )}
-                
+
                 {curveball && (
                     <div className="flex gap-2">
                         <button

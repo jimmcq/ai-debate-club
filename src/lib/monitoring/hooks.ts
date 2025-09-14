@@ -12,55 +12,54 @@ import { logger } from './logger';
  * Hook for tracking and logging errors with automatic context
  */
 export function useErrorLogger(componentName: string) {
-    const logError = useCallback((
-        error: AppError | Error,
-        action?: string,
-        context?: Record<string, unknown>
-    ) => {
-        const message = `Error in ${componentName}${action ? ` during ${action}` : ''}`;
+    const logError = useCallback(
+        (error: AppError | Error, action?: string, context?: Record<string, unknown>) => {
+            const message = `Error in ${componentName}${action ? ` during ${action}` : ''}`;
 
-        logger.error(message, error, {
-            component: componentName,
-            action,
-            ...context
-        });
-    }, [componentName]);
+            logger.error(message, error, {
+                component: componentName,
+                action,
+                ...context,
+            });
+        },
+        [componentName]
+    );
 
-    const logWarning = useCallback((
-        message: string,
-        context?: Record<string, unknown>
-    ) => {
-        logger.warn(`Warning in ${componentName}: ${message}`, {
-            component: componentName,
-            ...context
-        });
-    }, [componentName]);
+    const logWarning = useCallback(
+        (message: string, context?: Record<string, unknown>) => {
+            logger.warn(`Warning in ${componentName}: ${message}`, {
+                component: componentName,
+                ...context,
+            });
+        },
+        [componentName]
+    );
 
-    const logInfo = useCallback((
-        message: string,
-        context?: Record<string, unknown>
-    ) => {
-        logger.info(`${componentName}: ${message}`, {
-            component: componentName,
-            ...context
-        });
-    }, [componentName]);
+    const logInfo = useCallback(
+        (message: string, context?: Record<string, unknown>) => {
+            logger.info(`${componentName}: ${message}`, {
+                component: componentName,
+                ...context,
+            });
+        },
+        [componentName]
+    );
 
-    const logUserAction = useCallback((
-        action: string,
-        context?: Record<string, unknown>
-    ) => {
-        logger.userAction(action, {
-            component: componentName,
-            ...context
-        });
-    }, [componentName]);
+    const logUserAction = useCallback(
+        (action: string, context?: Record<string, unknown>) => {
+            logger.userAction(action, {
+                component: componentName,
+                ...context,
+            });
+        },
+        [componentName]
+    );
 
     return {
         logError,
         logWarning,
         logInfo,
-        logUserAction
+        logUserAction,
     };
 }
 
@@ -68,42 +67,45 @@ export function useErrorLogger(componentName: string) {
  * Hook for tracking API call performance and logging
  */
 export function useApiLogger() {
-    const logApiCall = useCallback(async <T>(
-        method: string,
-        url: string,
-        apiCall: () => Promise<T>,
-        context?: Record<string, unknown>
-    ): Promise<T> => {
-        const startTime = performance.now();
-        let status = 0;
-        let error: Error | undefined;
+    const logApiCall = useCallback(
+        async <T>(
+            method: string,
+            url: string,
+            apiCall: () => Promise<T>,
+            context?: Record<string, unknown>
+        ): Promise<T> => {
+            const startTime = performance.now();
+            let status = 0;
+            let error: Error | undefined;
 
-        try {
-            const result = await apiCall();
-            status = 200; // Assume success if no error thrown
+            try {
+                const result = await apiCall();
+                status = 200; // Assume success if no error thrown
 
-            const duration = Math.round(performance.now() - startTime);
-            logger.apiRequest(method, url, duration, status);
+                const duration = Math.round(performance.now() - startTime);
+                logger.apiRequest(method, url, duration, status);
 
-            return result;
-        } catch (err) {
-            error = err as Error;
+                return result;
+            } catch (err) {
+                error = err as Error;
 
-            // Try to extract status from error message or assume 500
-            status = extractStatusFromError(err) || 500;
+                // Try to extract status from error message or assume 500
+                status = extractStatusFromError(err) || 500;
 
-            const duration = Math.round(performance.now() - startTime);
-            logger.apiRequest(method, url, duration, status, error);
+                const duration = Math.round(performance.now() - startTime);
+                logger.apiRequest(method, url, duration, status, error);
 
-            // Log additional context for failed requests
-            logger.error(`API call failed: ${method} ${url}`, error as AppError | Error, {
-                api: { method, url, status, duration },
-                ...context
-            });
+                // Log additional context for failed requests
+                logger.error(`API call failed: ${method} ${url}`, error as AppError | Error, {
+                    api: { method, url, status, duration },
+                    ...context,
+                });
 
-            throw err;
-        }
-    }, []);
+                throw err;
+            }
+        },
+        []
+    );
 
     return { logApiCall };
 }
@@ -143,50 +145,58 @@ export function usePerformanceMonitor(operationName: string) {
         startTime.current = performance.now();
     }, []);
 
-    const end = useCallback((context?: Record<string, unknown>) => {
-        if (startTime.current !== null) {
-            const duration = Math.round(performance.now() - startTime.current);
+    const end = useCallback(
+        (context?: Record<string, unknown>) => {
+            if (startTime.current !== null) {
+                const duration = Math.round(performance.now() - startTime.current);
 
-            logger.info(`Performance: ${operationName} completed in ${duration}ms`, {
-                operation: operationName,
-                duration,
-                ...context
-            });
-
-            // Log slow operations as warnings
-            if (duration > 1000) { // More than 1 second
-                logger.warn(`Slow operation: ${operationName} took ${duration}ms`, {
+                logger.info(`Performance: ${operationName} completed in ${duration}ms`, {
                     operation: operationName,
                     duration,
-                    ...context
+                    ...context,
                 });
+
+                // Log slow operations as warnings
+                if (duration > 1000) {
+                    // More than 1 second
+                    logger.warn(`Slow operation: ${operationName} took ${duration}ms`, {
+                        operation: operationName,
+                        duration,
+                        ...context,
+                    });
+                }
+
+                startTime.current = null;
+                return duration;
             }
+            return 0;
+        },
+        [operationName]
+    );
 
-            startTime.current = null;
-            return duration;
-        }
-        return 0;
-    }, [operationName]);
-
-    const measure = useCallback(async <T>(
-        operation: () => Promise<T>,
-        context?: Record<string, unknown>
-    ): Promise<T> => {
-        start();
-        try {
-            const result = await operation();
-            end(context);
-            return result;
-        } catch (error) {
-            const duration = end(context);
-            logger.error(`Operation ${operationName} failed after ${duration}ms`, error as Error, {
-                operation: operationName,
-                duration,
-                ...context
-            });
-            throw error;
-        }
-    }, [operationName, start, end]);
+    const measure = useCallback(
+        async <T>(operation: () => Promise<T>, context?: Record<string, unknown>): Promise<T> => {
+            start();
+            try {
+                const result = await operation();
+                end(context);
+                return result;
+            } catch (error) {
+                const duration = end(context);
+                logger.error(
+                    `Operation ${operationName} failed after ${duration}ms`,
+                    error as Error,
+                    {
+                        operation: operationName,
+                        duration,
+                        ...context,
+                    }
+                );
+                throw error;
+            }
+        },
+        [operationName, start, end]
+    );
 
     return { start, end, measure };
 }
@@ -204,7 +214,7 @@ export function useComponentMonitor(componentName: string) {
 
         logger.debug(`Component ${componentName} mounted`, {
             component: componentName,
-            mountTime: mountTime.current
+            mountTime: mountTime.current,
         });
 
         return () => {
@@ -215,7 +225,7 @@ export function useComponentMonitor(componentName: string) {
             logger.debug(`Component ${componentName} unmounted after ${Math.round(lifespan)}ms`, {
                 component: componentName,
                 lifespan: Math.round(lifespan),
-                renderCount: finalRenderCount
+                renderCount: finalRenderCount,
             });
         };
     }, [componentName]);
@@ -228,13 +238,13 @@ export function useComponentMonitor(componentName: string) {
         if (renderCount.current > 50) {
             logger.warn(`Component ${componentName} has rendered ${renderCount.current} times`, {
                 component: componentName,
-                renderCount: renderCount.current
+                renderCount: renderCount.current,
             });
         }
     });
 
     return {
-        renderCount: renderCount.current
+        renderCount: renderCount.current,
     };
 }
 
@@ -242,58 +252,57 @@ export function useComponentMonitor(componentName: string) {
  * Hook for user interaction tracking
  */
 export function useUserInteractionTracker(componentName: string) {
-    const trackClick = useCallback((
-        element: string,
-        context?: Record<string, unknown>
-    ) => {
-        logger.userAction(`click_${element}`, {
-            component: componentName,
-            element,
-            ...context
-        });
-    }, [componentName]);
+    const trackClick = useCallback(
+        (element: string, context?: Record<string, unknown>) => {
+            logger.userAction(`click_${element}`, {
+                component: componentName,
+                element,
+                ...context,
+            });
+        },
+        [componentName]
+    );
 
-    const trackFormSubmit = useCallback((
-        formName: string,
-        context?: Record<string, unknown>
-    ) => {
-        logger.userAction(`submit_${formName}`, {
-            component: componentName,
-            form: formName,
-            ...context
-        });
-    }, [componentName]);
+    const trackFormSubmit = useCallback(
+        (formName: string, context?: Record<string, unknown>) => {
+            logger.userAction(`submit_${formName}`, {
+                component: componentName,
+                form: formName,
+                ...context,
+            });
+        },
+        [componentName]
+    );
 
-    const trackInputChange = useCallback((
-        fieldName: string,
-        context?: Record<string, unknown>
-    ) => {
-        // Only track significant input changes to avoid spam
-        logger.debug(`Input change in ${componentName}: ${fieldName}`, {
-            component: componentName,
-            field: fieldName,
-            ...context
-        });
-    }, [componentName]);
+    const trackInputChange = useCallback(
+        (fieldName: string, context?: Record<string, unknown>) => {
+            // Only track significant input changes to avoid spam
+            logger.debug(`Input change in ${componentName}: ${fieldName}`, {
+                component: componentName,
+                field: fieldName,
+                ...context,
+            });
+        },
+        [componentName]
+    );
 
-    const trackNavigation = useCallback((
-        from: string,
-        to: string,
-        context?: Record<string, unknown>
-    ) => {
-        logger.userAction(`navigate_${from}_to_${to}`, {
-            component: componentName,
-            from,
-            to,
-            ...context
-        });
-    }, [componentName]);
+    const trackNavigation = useCallback(
+        (from: string, to: string, context?: Record<string, unknown>) => {
+            logger.userAction(`navigate_${from}_to_${to}`, {
+                component: componentName,
+                from,
+                to,
+                ...context,
+            });
+        },
+        [componentName]
+    );
 
     return {
         trackClick,
         trackFormSubmit,
         trackInputChange,
-        trackNavigation
+        trackNavigation,
     };
 }
 
@@ -301,16 +310,16 @@ export function useUserInteractionTracker(componentName: string) {
  * Hook for automatic error boundary integration
  */
 export function useErrorBoundaryLogger(componentName: string) {
-    const logBoundaryError = useCallback((
-        error: Error,
-        errorInfo: { componentStack: string }
-    ) => {
-        logger.fatal(`Error boundary caught error in ${componentName}`, error, {
-            component: componentName,
-            errorBoundary: true,
-            componentStack: errorInfo.componentStack
-        });
-    }, [componentName]);
+    const logBoundaryError = useCallback(
+        (error: Error, errorInfo: { componentStack: string }) => {
+            logger.fatal(`Error boundary caught error in ${componentName}`, error, {
+                component: componentName,
+                errorBoundary: true,
+                componentStack: errorInfo.componentStack,
+            });
+        },
+        [componentName]
+    );
 
     return { logBoundaryError };
 }

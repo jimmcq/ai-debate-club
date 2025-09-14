@@ -17,24 +17,18 @@ export async function POST(request: NextRequest) {
         }
 
         if (!persona1Type || !persona2Type) {
-            return NextResponse.json(
-                { error: 'Both persona types are required' },
-                { status: 400 }
-            );
+            return NextResponse.json({ error: 'Both persona types are required' }, { status: 400 });
         }
 
         // Create new debate
         const debate = createDebate(topic, persona1Type, persona2Type);
-        
+
         // Store debate
         debateStorage.set(debate.id, debate);
 
         return NextResponse.json(debate);
     } catch (error) {
         console.error('Error starting debate:', error);
-        return NextResponse.json(
-            { error: 'Internal server error' },
-            { status: 500 }
-        );
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 }

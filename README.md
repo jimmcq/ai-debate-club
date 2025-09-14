@@ -30,34 +30,39 @@ A real-time web application that orchestrates structured debates between two dis
 ### Installation
 
 1. Clone the repository:
-   ```bash
-   git clone <repository-url>
-   cd ai-debate-club
-   ```
+
+    ```bash
+    git clone <repository-url>
+    cd ai-debate-club
+    ```
 
 2. Install dependencies:
-   ```bash
-   npm install
-   # or
-   yarn install
-   ```
+
+    ```bash
+    npm install
+    # or
+    yarn install
+    ```
 
 3. Set up environment variables:
-   ```bash
-   cp .env.example .env.local
-   ```
-   
-   Edit `.env.local` and add your Groq API key:
-   ```
-   GROQ_API_KEY=your_groq_api_key_here
-   ```
+
+    ```bash
+    cp .env.example .env.local
+    ```
+
+    Edit `.env.local` and add your Groq API key:
+
+    ```
+    GROQ_API_KEY=your_groq_api_key_here
+    ```
 
 4. Run the development server:
-   ```bash
-   npm run dev
-   # or
-   yarn dev
-   ```
+
+    ```bash
+    npm run dev
+    # or
+    yarn dev
+    ```
 
 5. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
@@ -84,6 +89,7 @@ src/
 ## API Endpoints
 
 ### Start a Debate
+
 ```
 POST /api/debate/start
 Content-Type: application/json
@@ -96,6 +102,7 @@ Content-Type: application/json
 ```
 
 ### Generate Next Message
+
 ```
 POST /api/debate/message
 Content-Type: application/json
@@ -107,6 +114,7 @@ Content-Type: application/json
 ```
 
 ### Get Debate State
+
 ```
 GET /api/debate/message?id=uuid
 ```
@@ -121,6 +129,7 @@ GET /api/debate/message?id=uuid
 ## Cost Management
 
 The application is designed for cost efficiency:
+
 - **Token Optimization**: ~350 input + 220 output tokens per message
 - **Cost per Debate**: ~$0.0004 (4,560 tokens total for 8 messages)
 - **Monthly Hobby Scale**: 1,250 debates cost < $0.50
@@ -209,6 +218,7 @@ When adding new features:
 5. **Focus on realistic scenarios** - Test what will actually break in production
 
 ### Building for Production
+
 ```bash
 npm run build
 # or
@@ -216,6 +226,7 @@ yarn build
 ```
 
 ### Linting
+
 ```bash
 npm run lint
 # or
@@ -229,15 +240,101 @@ yarn lint
 - 🌐 GitHub: [@jimmcq](https://github.com/jimmcq)
 - 💼 LinkedIn: [jimmcquillan](https://linkedin.com/in/jimmcquillan/)
 
+## Deployment
+
+### Vercel Deployment (Recommended)
+
+This project is optimized for deployment on Vercel:
+
+1. **Connect to Vercel:**
+
+    ```bash
+    npm install -g vercel
+    vercel
+    ```
+
+2. **Set Environment Variables:**
+   In your Vercel dashboard, add:
+    - `GROQ_API_KEY` - Your Groq API key
+
+3. **Automatic Deployments:**
+    - Push to `main` branch triggers production deployment
+    - Pull requests create preview deployments
+    - All deployments run through CI/CD pipeline
+
+### Manual Deployment
+
+For other platforms:
+
+```bash
+# Build the application
+npm run build
+
+# Start the production server
+npm start
+```
+
+### Environment Variables
+
+| Variable       | Description                      | Required | Example      |
+| -------------- | -------------------------------- | -------- | ------------ |
+| `GROQ_API_KEY` | Groq API key for AI model access | ✅       | `gsk_...`    |
+| `NODE_ENV`     | Environment mode                 | ❌       | `production` |
+
+### CI/CD Pipeline
+
+The project includes a comprehensive CI/CD pipeline with:
+
+- **Pre-commit Hooks**: Lint, format, and test changes
+- **GitHub Actions**:
+    - ✅ Lint and format checking
+    - ✅ Complete test suite (152 tests)
+    - ✅ TypeScript compilation
+    - ✅ Security audit
+    - ✅ Build verification
+    - 🔍 Lighthouse performance testing
+    - 🚀 Automatic Vercel deployment
+
+**Pipeline Requirements for Deployment:**
+
+- All tests must pass (152/152)
+- Linting must pass
+- TypeScript compilation must succeed
+- Security audit must not find high-severity issues
+- Build must complete successfully
+
 ## Contributing
 
+### Development Workflow
+
 1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Make your changes following the coding standards
+4. Run tests and ensure they pass (`npm test`)
+5. Run linting and formatting (`npm run lint:fix && npm run format`)
+6. Commit your changes (triggers pre-commit hooks)
+7. Push to your branch (`git push origin feature/amazing-feature`)
+8. Open a Pull Request
+
+### Code Quality Standards
+
+- **Tests Required**: All new features must include tests
+- **100% Test Pass Rate**: No failing tests allowed
+- **Linting**: Code must pass ESLint rules
+- **Formatting**: Code must be formatted with Prettier
+- **TypeScript**: Strong typing required, no `any` types
+- **Performance**: Lighthouse scores must meet thresholds
+
+### Pre-commit Hooks
+
+The project automatically runs on commit:
+
+- ESLint with auto-fix
+- Prettier formatting
+- Test suite execution
+
+If any check fails, the commit will be blocked.
 
 ## License
 
 MIT License - see LICENSE file for details
-

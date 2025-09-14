@@ -14,18 +14,15 @@ export default function PersonaSelector({
     title,
     selectedPersona,
     onPersonaChange,
-    excludePersona
+    excludePersona,
 }: PersonaSelectorProps) {
     const personaEntries = getPersonaEntries();
 
     return (
         <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                {title}
-            </h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{title}</h3>
             <div className="space-y-3">
                 {personaEntries.map(([personaKey, persona]) => {
-                    
                     const isDisabled = excludePersona === personaKey;
                     const isSelected = selectedPersona === personaKey;
 
@@ -36,8 +33,8 @@ export default function PersonaSelector({
                                 isDisabled
                                     ? 'opacity-50 cursor-not-allowed bg-gray-100 dark:bg-gray-700'
                                     : isSelected
-                                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                                    : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
+                                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                                      : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
                             }`}
                         >
                             <input
@@ -45,7 +42,7 @@ export default function PersonaSelector({
                                 name={`persona-${title}`}
                                 value={personaKey}
                                 checked={isSelected}
-                                onChange={(e) => onPersonaChange(e.target.value as PersonaType)}
+                                onChange={e => onPersonaChange(e.target.value as PersonaType)}
                                 disabled={isDisabled}
                                 className="sr-only"
                             />

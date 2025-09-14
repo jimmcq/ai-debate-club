@@ -1,0 +1,102 @@
+name: Lighthouse Performance Testing
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Run performance tests daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+jobs:
+  lighthouse:
+    name: Lighthouse Performance Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build application
+        run: npm run build
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+
+      - name: Install Lighthouse CI
+        run: npm install -g @lhci/cli
+
+      - name: Run Lighthouse CI
+        run: lhci autorun --upload.target=temporary-public-storage
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+
+      - name: Upload Lighthouse results
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-results-${{ github.run_number }}
+          path: .lighthouseci/
+          retention-days: 30
+
+      - name: Comment PR with Lighthouse results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            // Try to read Lighthouse results
+            try {
+              const resultsPath = '.lighthouseci';
+              if (fs.existsSync(resultsPath)) {
+                const files = fs.readdirSync(resultsPath);
+                const manifestFile = files.find(f => f.includes('manifest.json'));
+
+                if (manifestFile) {
+                  const manifest = JSON.parse(fs.readFileSync(path.join(resultsPath, manifestFile)));
+                  const results = manifest[0];
+
+                  const scores = {
+                    performance: Math.round(results.summary.performance * 100),
+                    accessibility: Math.round(results.summary.accessibility * 100),
+                    bestPractices: Math.round(results.summary['best-practices'] * 100),
+                    seo: Math.round(results.summary.seo * 100)
+                  };
+
+                  const comment = `## 🔍 Lighthouse Performance Report
+
+            | Category | Score | Status |
+            |----------|--------|--------|
+            | Performance | ${scores.performance}/100 | ${scores.performance >= 80 ? '✅' : '⚠️'} |
+            | Accessibility | ${scores.accessibility}/100 | ${scores.accessibility >= 90 ? '✅' : '❌'} |
+            | Best Practices | ${scores.bestPractices}/100 | ${scores.bestPractices >= 80 ? '✅' : '⚠️'} |
+            | SEO | ${scores.seo}/100 | ${scores.seo >= 80 ? '✅' : '⚠️'} |
+
+            ${results.url ? `[View full report](${results.url})` : ''}`;
+
+                  github.rest.issues.createComment({
+                    issue_number: context.issue.number,
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    body: comment
+                  });
+                }
+              }
+            } catch (error) {
+              console.log('Could not read Lighthouse results:', error);
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: '🔍 Lighthouse performance test completed. Check the Actions tab for detailed results.'
+              });
+            }

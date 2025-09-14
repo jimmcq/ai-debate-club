@@ -13,7 +13,7 @@ export enum LogLevel {
     INFO = 'info',
     WARN = 'warn',
     ERROR = 'error',
-    FATAL = 'fatal'
+    FATAL = 'fatal',
 }
 
 /**
@@ -72,7 +72,7 @@ const DEFAULT_CONFIG: LoggerConfig = {
     bufferSize: 100,
     flushInterval: 30000, // 30 seconds
     enableConsole: process.env.NODE_ENV === 'development',
-    enableRemote: !!process.env.NEXT_PUBLIC_LOGGING_ENDPOINT
+    enableRemote: !!process.env.NEXT_PUBLIC_LOGGING_ENDPOINT,
 };
 
 /**
@@ -129,7 +129,13 @@ class Logger {
     private shouldLog(level: LogLevel): boolean {
         if (!this.config.enabled) return false;
 
-        const levels = [LogLevel.DEBUG, LogLevel.INFO, LogLevel.WARN, LogLevel.ERROR, LogLevel.FATAL];
+        const levels = [
+            LogLevel.DEBUG,
+            LogLevel.INFO,
+            LogLevel.WARN,
+            LogLevel.ERROR,
+            LogLevel.FATAL,
+        ];
         const currentIndex = levels.indexOf(this.config.level);
         const messageIndex = levels.indexOf(level);
 
@@ -145,7 +151,7 @@ class Logger {
                 userAgent: 'server',
                 url: 'server',
                 referrer: 'server',
-                sessionId: this.sessionId
+                sessionId: this.sessionId,
             };
         }
 
@@ -153,7 +159,7 @@ class Logger {
             userAgent: navigator.userAgent,
             url: window.location.href,
             referrer: document.referrer,
-            sessionId: this.sessionId
+            sessionId: this.sessionId,
         };
     }
 
@@ -171,7 +177,7 @@ class Logger {
             message,
             timestamp: new Date().toISOString(),
             context,
-            metadata: this.createMetadata()
+            metadata: this.createMetadata(),
         };
 
         // Add error details if provided
@@ -179,7 +185,7 @@ class Logger {
             entry.error = {
                 name: error.name,
                 message: error.message,
-                stack: error.stack
+                stack: error.stack,
             };
 
             if (error instanceof AppError) {
@@ -191,9 +197,11 @@ class Logger {
         // Add performance metrics if available
         if (typeof window !== 'undefined' && 'performance' in window) {
             try {
-                const memory = (performance as Performance & { memory?: { usedJSHeapSize: number } }).memory;
+                const memory = (
+                    performance as Performance & { memory?: { usedJSHeapSize: number } }
+                ).memory;
                 entry.performance = {
-                    memory: memory?.usedJSHeapSize
+                    memory: memory?.usedJSHeapSize,
                 };
             } catch {
                 // Performance API might not be available
@@ -211,16 +219,17 @@ class Logger {
 
         // Console logging for development
         if (this.config.enableConsole) {
-            const consoleMethod = entry.level === LogLevel.ERROR || entry.level === LogLevel.FATAL
-                ? console.error
-                : entry.level === LogLevel.WARN
-                ? console.warn
-                : console.log;
+            const consoleMethod =
+                entry.level === LogLevel.ERROR || entry.level === LogLevel.FATAL
+                    ? console.error
+                    : entry.level === LogLevel.WARN
+                      ? console.warn
+                      : console.log;
 
             consoleMethod(`[${entry.level.toUpperCase()}] ${entry.message}`, {
                 context: entry.context,
                 error: entry.error,
-                metadata: entry.metadata
+                metadata: entry.metadata,
             });
         }
 
@@ -245,9 +254,9 @@ class Logger {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    ...(this.config.apiKey && { 'Authorization': `Bearer ${this.config.apiKey}` })
+                    ...(this.config.apiKey && { Authorization: `Bearer ${this.config.apiKey}` }),
                 },
-                body: JSON.stringify({ logs })
+                body: JSON.stringify({ logs }),
             });
 
             if (!response.ok) {
@@ -317,19 +326,19 @@ class Logger {
     /**
      * Log API request with performance metrics
      */
-    apiRequest(
-        method: string,
-        url: string,
-        duration: number,
-        status: number,
-        error?: Error
-    ): void {
-        const level = status >= 400 ? LogLevel.ERROR : status >= 300 ? LogLevel.WARN : LogLevel.INFO;
+    apiRequest(method: string, url: string, duration: number, status: number, error?: Error): void {
+        const level =
+            status >= 400 ? LogLevel.ERROR : status >= 300 ? LogLevel.WARN : LogLevel.INFO;
         const message = `API ${method} ${url} - ${status} (${duration}ms)`;
 
-        const entry = this.createLogEntry(level, message, {
-            api: { method, url, status, duration }
-        }, error);
+        const entry = this.createLogEntry(
+            level,
+            message,
+            {
+                api: { method, url, status, duration },
+            },
+            error
+        );
 
         if (entry.performance) {
             entry.performance.duration = duration;
@@ -344,7 +353,7 @@ class Logger {
     userAction(action: string, context?: Record<string, unknown>): void {
         this.info(`User action: ${action}`, {
             ...context,
-            userAction: action
+            userAction: action,
         });
     }
 

@@ -8,17 +8,17 @@ export enum ErrorCategory {
     DEBATE_LOGIC = 'debate_logic',
     USER_INPUT = 'user_input',
     SYSTEM = 'system',
-    RATE_LIMIT = 'rate_limit'
+    RATE_LIMIT = 'rate_limit',
 }
 
 /**
  * Error severity levels for UI treatment
  */
 export enum ErrorSeverity {
-    LOW = 'low',           // Toast notification
-    MEDIUM = 'medium',     // Modal dialog
-    HIGH = 'high',         // Error boundary
-    CRITICAL = 'critical'  // Full page error
+    LOW = 'low', // Toast notification
+    MEDIUM = 'medium', // Modal dialog
+    HIGH = 'high', // Error boundary
+    CRITICAL = 'critical', // Full page error
 }
 
 /**
@@ -40,7 +40,7 @@ export class AppError extends Error {
         technicalMessage,
         retryable = false,
         context = {},
-        cause
+        cause,
     }: {
         category: ErrorCategory;
         severity: ErrorSeverity;
@@ -76,7 +76,7 @@ export class AppError extends Error {
             retryable: this.retryable,
             context: this.context,
             timestamp: this.timestamp.toISOString(),
-            stack: this.stack
+            stack: this.stack,
         };
     }
 }
@@ -90,26 +90,31 @@ export class NetworkError extends AppError {
         super({
             category: ErrorCategory.NETWORK,
             severity: ErrorSeverity.MEDIUM,
-            userMessage: "We're having trouble connecting to our servers. Please check your internet connection and try again.",
+            userMessage:
+                "We're having trouble connecting to our servers. Please check your internet connection and try again.",
             technicalMessage,
             retryable: true,
-            context
+            context,
         });
         this.name = 'NetworkError';
     }
 }
 
 export class AIServiceError extends AppError {
-    constructor(technicalMessage: string, retryable: boolean = true, context: Record<string, unknown> = {}) {
+    constructor(
+        technicalMessage: string,
+        retryable: boolean = true,
+        context: Record<string, unknown> = {}
+    ) {
         super({
             category: ErrorCategory.AI_SERVICE,
             severity: ErrorSeverity.MEDIUM,
             userMessage: retryable
-                ? "Our AI is taking longer than usual to respond. Please try again in a moment."
+                ? 'Our AI is taking longer than usual to respond. Please try again in a moment.'
                 : "Our AI service is temporarily unavailable. We're working to fix this issue.",
             technicalMessage,
             retryable,
-            context
+            context,
         });
         this.name = 'AIServiceError';
     }
@@ -123,30 +128,38 @@ export class ValidationError extends AppError {
             userMessage: `Please check your ${field} and try again.`,
             technicalMessage,
             retryable: false,
-            context: { ...context, field }
+            context: { ...context, field },
         });
         this.name = 'ValidationError';
     }
 }
 
 export class DebateError extends AppError {
-    constructor(technicalMessage: string, retryable: boolean = false, context: Record<string, unknown> = {}) {
+    constructor(
+        technicalMessage: string,
+        retryable: boolean = false,
+        context: Record<string, unknown> = {}
+    ) {
         super({
             category: ErrorCategory.DEBATE_LOGIC,
             severity: ErrorSeverity.MEDIUM,
             userMessage: retryable
                 ? "Something went wrong with the debate. Let's try that again."
-                : "This debate encountered an issue and needs to be restarted.",
+                : 'This debate encountered an issue and needs to be restarted.',
             technicalMessage,
             retryable,
-            context
+            context,
         });
         this.name = 'DebateError';
     }
 }
 
 export class RateLimitError extends AppError {
-    constructor(technicalMessage: string, retryAfter?: number, context: Record<string, unknown> = {}) {
+    constructor(
+        technicalMessage: string,
+        retryAfter?: number,
+        context: Record<string, unknown> = {}
+    ) {
         const waitTime = retryAfter ? Math.ceil(retryAfter / 60) : 1;
         super({
             category: ErrorCategory.RATE_LIMIT,
@@ -154,7 +167,7 @@ export class RateLimitError extends AppError {
             userMessage: `You're sending requests too quickly. Please wait ${waitTime} minute${waitTime > 1 ? 's' : ''} before trying again.`,
             technicalMessage,
             retryable: true,
-            context: { ...context, retryAfter }
+            context: { ...context, retryAfter },
         });
         this.name = 'RateLimitError';
     }
@@ -165,10 +178,11 @@ export class SystemError extends AppError {
         super({
             category: ErrorCategory.SYSTEM,
             severity: ErrorSeverity.HIGH,
-            userMessage: "We encountered an unexpected error. This has been reported and we're looking into it.",
+            userMessage:
+                "We encountered an unexpected error. This has been reported and we're looking into it.",
             technicalMessage,
             retryable: false,
-            context
+            context,
         });
         this.name = 'SystemError';
     }
@@ -178,36 +192,26 @@ export class SystemError extends AppError {
  * Error factory functions for common scenarios
  */
 export const ErrorFactory = {
-    networkTimeout: (url: string) => new NetworkError(
-        `Request to ${url} timed out`,
-        { url }
-    ),
+    networkTimeout: (url: string) => new NetworkError(`Request to ${url} timed out`, { url }),
 
-    aiResponseFailed: (attempt: number, maxAttempts: number) => new AIServiceError(
-        `AI response failed after ${attempt}/${maxAttempts} attempts`,
-        attempt < maxAttempts,
-        { attempt, maxAttempts }
-    ),
+    aiResponseFailed: (attempt: number, maxAttempts: number) =>
+        new AIServiceError(
+            `AI response failed after ${attempt}/${maxAttempts} attempts`,
+            attempt < maxAttempts,
+            { attempt, maxAttempts }
+        ),
 
-    invalidTopic: (topic: string) => new ValidationError(
-        'topic',
-        `Topic "${topic}" is invalid`,
-        { topic }
-    ),
+    invalidTopic: (topic: string) =>
+        new ValidationError('topic', `Topic "${topic}" is invalid`, { topic }),
 
-    debateNotFound: (debateId: string) => new DebateError(
-        `Debate ${debateId} not found`,
-        false,
-        { debateId }
-    ),
+    debateNotFound: (debateId: string) =>
+        new DebateError(`Debate ${debateId} not found`, false, { debateId }),
 
-    tooManyRequests: (retryAfter?: number) => new RateLimitError(
-        'Rate limit exceeded',
-        retryAfter
-    ),
+    tooManyRequests: (retryAfter?: number) => new RateLimitError('Rate limit exceeded', retryAfter),
 
-    unexpectedError: (originalError: Error) => new SystemError(
-        `Unexpected error: ${originalError.message}`,
-        { originalError: originalError.message, stack: originalError.stack }
-    )
+    unexpectedError: (originalError: Error) =>
+        new SystemError(`Unexpected error: ${originalError.message}`, {
+            originalError: originalError.message,
+            stack: originalError.stack,
+        }),
 };

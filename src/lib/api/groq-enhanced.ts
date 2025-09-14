@@ -37,13 +37,13 @@ const DEFAULT_CONFIG: GroqClientConfig = {
         maxRetries: 2, // Conservative for AI API calls
         initialDelay: 2000,
         maxDelay: 8000,
-        retryCondition: (error) => {
+        retryCondition: error => {
             if (error instanceof GroqAPIError) {
                 return error.retryable;
             }
             return true; // Retry unknown errors
-        }
-    }
+        },
+    },
 };
 
 /**
@@ -74,7 +74,7 @@ export class GroqClient {
             messages,
             max_tokens: 220, // Hard limit as per TDD
             temperature: 0.7,
-            ...options
+            ...options,
         };
 
         try {
@@ -84,11 +84,11 @@ export class GroqClient {
                     {
                         method: 'POST',
                         headers: {
-                            'Authorization': `Bearer ${this.apiKey}`,
-                            'Content-Type': 'application/json'
+                            Authorization: `Bearer ${this.apiKey}`,
+                            'Content-Type': 'application/json',
                         },
                         body: JSON.stringify(requestBody),
-                        timeout: this.config.timeout
+                        timeout: this.config.timeout,
                     },
                     this.config.retryOptions
                 );
@@ -132,7 +132,11 @@ export class GroqClient {
                     );
                 }
 
-                if (error.message.includes('HTTP 500') || error.message.includes('HTTP 502') || error.message.includes('HTTP 503')) {
+                if (
+                    error.message.includes('HTTP 500') ||
+                    error.message.includes('HTTP 502') ||
+                    error.message.includes('HTTP 503')
+                ) {
                     throw new GroqAPIError(
                         'AI service is temporarily unavailable',
                         parseInt(error.message.match(/HTTP (\d+)/)?.[1] || '500'),
@@ -166,13 +170,13 @@ export class GroqClient {
     async healthCheck(): Promise<{ status: 'healthy' | 'unhealthy'; details?: string }> {
         try {
             await this.generateResponse([
-                { role: 'user', content: 'Test message for health check' }
+                { role: 'user', content: 'Test message for health check' },
             ]);
             return { status: 'healthy' };
         } catch (error) {
             return {
                 status: 'unhealthy',
-                details: error instanceof Error ? error.message : 'Unknown error'
+                details: error instanceof Error ? error.message : 'Unknown error',
             };
         }
     }
@@ -184,7 +188,7 @@ export class GroqClient {
         const state = groqCircuitBreaker.getState();
         return {
             state,
-            canExecute: state !== 'open'
+            canExecute: state !== 'open',
         };
     }
 

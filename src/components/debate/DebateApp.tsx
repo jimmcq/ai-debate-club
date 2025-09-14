@@ -5,7 +5,12 @@ import { DebateState, PersonaType } from '@/lib/types/debate';
 import { getRandomTopic } from '@/lib/debate/utils';
 import { useToast } from '@/components/ui/Toast';
 import { ErrorFactory, ValidationError, NetworkError } from '@/lib/errors/types';
-import { useErrorLogger, useApiLogger, useUserInteractionTracker, useComponentMonitor } from '@/lib/monitoring/hooks';
+import {
+    useErrorLogger,
+    useApiLogger,
+    useUserInteractionTracker,
+    useComponentMonitor,
+} from '@/lib/monitoring/hooks';
 import PersonaSelector from './PersonaSelector';
 import TopicInput from './TopicInput';
 import DebateView from './DebateView';
@@ -35,14 +40,20 @@ export default function DebateApp() {
         }
 
         if (topic.trim().length < 10) {
-            const validationError = new ValidationError('topic', 'Topic must be at least 10 characters long');
+            const validationError = new ValidationError(
+                'topic',
+                'Topic must be at least 10 characters long'
+            );
             logError(validationError, 'topic_too_short_validation');
             showError(validationError);
             return;
         }
 
         if (topic.trim().length > 200) {
-            const validationError = new ValidationError('topic', 'Topic must be less than 200 characters');
+            const validationError = new ValidationError(
+                'topic',
+                'Topic must be less than 200 characters'
+            );
             logError(validationError, 'topic_too_long_validation');
             showError(validationError);
             return;
@@ -52,14 +63,14 @@ export default function DebateApp() {
             topic: topic.trim(),
             persona1,
             persona2,
-            topicLength: topic.trim().length
+            topicLength: topic.trim().length,
         });
 
         logInfo('Starting new debate', {
             topic: topic.trim(),
             persona1,
             persona2,
-            topicLength: topic.trim().length
+            topicLength: topic.trim().length,
         });
 
         setIsStarting(true);
@@ -67,21 +78,22 @@ export default function DebateApp() {
             const response = await logApiCall(
                 'POST',
                 '/api/debate/start',
-                () => fetch('/api/debate/start', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        topic: topic.trim(),
-                        persona1Type: persona1,
-                        persona2Type: persona2,
+                () =>
+                    fetch('/api/debate/start', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            topic: topic.trim(),
+                            persona1Type: persona1,
+                            persona2Type: persona2,
+                        }),
                     }),
-                }),
                 {
                     topic: topic.trim(),
                     persona1,
-                    persona2
+                    persona2,
                 }
             );
 
@@ -96,7 +108,10 @@ export default function DebateApp() {
                     throw rateLimitError;
                 } else {
                     const errorData = await response.json().catch(() => ({}));
-                    const validationError = new ValidationError('debate setup', errorData.error || 'Invalid debate configuration');
+                    const validationError = new ValidationError(
+                        'debate setup',
+                        errorData.error || 'Invalid debate configuration'
+                    );
                     logError(validationError, 'debate_start_validation_error');
                     throw validationError;
                 }
@@ -109,11 +124,10 @@ export default function DebateApp() {
                 debateId: debate.id,
                 topic: debate.topic,
                 persona1Type: debate.participants[0].personaType,
-                persona2Type: debate.participants[1].personaType
+                persona2Type: debate.participants[1].personaType,
             });
 
             showSuccess('Debate Started!', 'Your AI debate is ready to begin.');
-
         } catch (error) {
             if (error instanceof ValidationError || error instanceof NetworkError) {
                 showError(error, () => handleStartDebate());
@@ -155,9 +169,7 @@ export default function DebateApp() {
     return (
         <div className="max-w-4xl mx-auto p-6 space-y-8">
             <div className="text-center space-y-4">
-                <h1 className="text-4xl font-bold text-gray-900 dark:text-white">
-                    AI Debate Club
-                </h1>
+                <h1 className="text-4xl font-bold text-gray-900 dark:text-white">AI Debate Club</h1>
                 <p className="text-lg text-gray-600 dark:text-gray-300">
                     Watch AI personalities engage in structured debates on topics you choose
                 </p>

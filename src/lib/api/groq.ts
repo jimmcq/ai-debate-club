@@ -3,7 +3,10 @@ import { GroqMessage, GroqRequest, GroqResponse } from '@/lib/types/debate';
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
 export class GroqAPIError extends Error {
-    constructor(message: string, public status?: number) {
+    constructor(
+        message: string,
+        public status?: number
+    ) {
         super(message);
         this.name = 'GroqAPIError';
     }
@@ -21,17 +24,17 @@ export const callGroq = async (messages: GroqMessage[]): Promise<string> => {
         model,
         messages,
         max_tokens: 220, // Hard limit as per TDD
-        temperature: 0.7
+        temperature: 0.7,
     };
 
     try {
         const response = await fetch(GROQ_API_URL, {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${apiKey}`,
-                'Content-Type': 'application/json'
+                Authorization: `Bearer ${apiKey}`,
+                'Content-Type': 'application/json',
             },
-            body: JSON.stringify(requestBody)
+            body: JSON.stringify(requestBody),
         });
 
         if (!response.ok) {
@@ -43,7 +46,7 @@ export const callGroq = async (messages: GroqMessage[]): Promise<string> => {
         }
 
         const data: GroqResponse = await response.json();
-        
+
         if (!data.choices || data.choices.length === 0) {
             throw new GroqAPIError('No response from Groq API');
         }
@@ -53,7 +56,9 @@ export const callGroq = async (messages: GroqMessage[]): Promise<string> => {
         if (error instanceof GroqAPIError) {
             throw error;
         }
-        throw new GroqAPIError(`Failed to call Groq API: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        throw new GroqAPIError(
+            `Failed to call Groq API: ${error instanceof Error ? error.message : 'Unknown error'}`
+        );
     }
 };
 
@@ -78,11 +83,11 @@ Respond with a compelling argument that maintains your persona.`;
     return [
         {
             role: 'system',
-            content: systemPrompt
+            content: systemPrompt,
         },
         {
             role: 'user',
-            content: contextFrame
-        }
+            content: contextFrame,
+        },
     ];
 };

@@ -13,36 +13,29 @@ export async function POST(request: NextRequest) {
         // Get debate from storage
         const debate = debateStorage.get(debateId);
         if (!debate) {
-            return NextResponse.json(
-                { error: 'Debate not found' },
-                { status: 404 }
-            );
+            return NextResponse.json({ error: 'Debate not found' }, { status: 404 });
         }
 
         // Check if debate is complete
         if (isDebateComplete(debate.currentTurn)) {
-            return NextResponse.json(
-                { error: 'Debate is already complete' },
-                { status: 400 }
-            );
+            return NextResponse.json({ error: 'Debate is already complete' }, { status: 400 });
         }
 
         // Determine current participant
         const currentParticipantId = getNextParticipant(debate.currentTurn);
         const currentParticipant = debate.participants.find(p => p.id === currentParticipantId);
-        
+
         if (!currentParticipant) {
-            return NextResponse.json(
-                { error: 'Invalid participant' },
-                { status: 400 }
-            );
+            return NextResponse.json({ error: 'Invalid participant' }, { status: 400 });
         }
 
         // Get persona configuration
         const personaConfig = getPersonaConfig(currentParticipant.personaType);
-        
+
         // Get opponent's last message (if any)
-        const opponentMessages = debate.messages.filter(m => m.participantId !== currentParticipantId);
+        const opponentMessages = debate.messages.filter(
+            m => m.participantId !== currentParticipantId
+        );
         const lastOpponentMessage = opponentMessages[opponentMessages.length - 1];
 
         // Build prompt
@@ -64,14 +57,14 @@ export async function POST(request: NextRequest) {
             participantId: currentParticipantId,
             content: response,
             turn: debate.currentTurn,
-            timestamp: Date.now()
+            timestamp: Date.now(),
         };
 
         // Update debate state
         debate.messages.push(newMessage);
         debate.currentTurn += 1;
         debate.phase = getDebatePhase(debate.currentTurn);
-        
+
         if (curveball) {
             debate.curveball = curveball;
         }
@@ -81,14 +74,11 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({
             message: newMessage,
-            debate: debate
+            debate: debate,
         });
     } catch (error) {
         console.error('Error generating message:', error);
-        return NextResponse.json(
-            { error: 'Failed to generate message' },
-            { status: 500 }
-        );
+        return NextResponse.json({ error: 'Failed to generate message' }, { status: 500 });
     }
 }
 
@@ -97,18 +87,12 @@ export async function GET(request: NextRequest) {
     const debateId = searchParams.get('id');
 
     if (!debateId) {
-        return NextResponse.json(
-            { error: 'Debate ID is required' },
-            { status: 400 }
-        );
+        return NextResponse.json({ error: 'Debate ID is required' }, { status: 400 });
     }
 
     const debate = debateStorage.get(debateId);
     if (!debate) {
-        return NextResponse.json(
-            { error: 'Debate not found' },
-            { status: 404 }
-        );
+        return NextResponse.json({ error: 'Debate not found' }, { status: 404 });
     }
 
     return NextResponse.json(debate);

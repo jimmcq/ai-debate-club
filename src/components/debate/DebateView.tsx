@@ -6,7 +6,12 @@ import { getPersonaConfig } from '@/lib/personas';
 import { canAddCurveball, isDebateComplete, getCurrentTurnNumber } from '@/lib/debate/utils';
 import { useToast } from '@/components/ui/Toast';
 import { ErrorFactory, AIServiceError, NetworkError } from '@/lib/errors/types';
-import { useErrorLogger, useApiLogger, useUserInteractionTracker, useComponentMonitor } from '@/lib/monitoring/hooks';
+import {
+    useErrorLogger,
+    useApiLogger,
+    useUserInteractionTracker,
+    useComponentMonitor,
+} from '@/lib/monitoring/hooks';
 import MessageDisplay from './MessageDisplay';
 import CurveballInput from './CurveballInput';
 
@@ -16,11 +21,7 @@ interface DebateViewProps {
     onNewDebate: () => void;
 }
 
-export default function DebateView({
-    debate,
-    onUpdateDebate,
-    onNewDebate
-}: DebateViewProps) {
+export default function DebateView({ debate, onUpdateDebate, onNewDebate }: DebateViewProps) {
     const [isGenerating, setIsGenerating] = useState(false);
     const [curveball, setCurveball] = useState('');
     const [winner, setWinner] = useState<'persona1' | 'persona2' | null>(null);
@@ -43,27 +44,28 @@ export default function DebateView({
             debateId: debate.id,
             hasCurveball: !!curveballText,
             currentTurn: debate.currentTurn,
-            messageCount: debate.messages.length
+            messageCount: debate.messages.length,
         });
 
         try {
             const response = await logApiCall(
                 'POST',
                 '/api/debate/message',
-                () => fetch('/api/debate/message', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        debateId: debate.id,
-                        curveball: curveballText?.trim() || undefined,
+                () =>
+                    fetch('/api/debate/message', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            debateId: debate.id,
+                            curveball: curveballText?.trim() || undefined,
+                        }),
                     }),
-                }),
                 {
                     debateId: debate.id,
                     hasCurveball: !!curveballText,
-                    currentTurn: debate.currentTurn
+                    currentTurn: debate.currentTurn,
                 }
             );
 
@@ -84,13 +86,10 @@ export default function DebateView({
                         true
                     );
                     logError(serviceError, 'ai_service_unavailable');
-                    showError(
-                        serviceError,
-                        () => {
-                            setServiceUnavailable(false);
-                            handleNextMessage(curveballText);
-                        }
-                    );
+                    showError(serviceError, () => {
+                        setServiceUnavailable(false);
+                        handleNextMessage(curveballText);
+                    });
                     return;
                 }
 
@@ -107,7 +106,7 @@ export default function DebateView({
             logInfo('Debate message generated successfully', {
                 debateId: debate.id,
                 newMessageCount: data.debate.messages.length,
-                hasCurveball: !!curveballText
+                hasCurveball: !!curveballText,
             });
 
             if (curveballText) {
@@ -122,12 +121,13 @@ export default function DebateView({
                 logInfo('AI service restored after previous unavailability');
                 showSuccess('Service Restored', 'AI responses are working normally again.');
             }
-
         } catch (error) {
             if (error instanceof Error && error.message.includes('fetch')) {
                 // Network error - user might be offline
                 const networkError = new NetworkError('Unable to reach our servers');
-                logError(networkError, 'network_connection_failed', { originalError: error.message });
+                logError(networkError, 'network_connection_failed', {
+                    originalError: error.message,
+                });
                 showError(networkError, () => handleNextMessage(curveballText));
             } else {
                 // Unknown error
@@ -148,14 +148,14 @@ export default function DebateView({
             winnerId,
             winnerName,
             debateId: debate.id,
-            topic: debate.topic
+            topic: debate.topic,
         });
 
         logInfo('User voted in debate', {
             debateId: debate.id,
             winnerId,
             winnerName,
-            totalMessages: debate.messages.length
+            totalMessages: debate.messages.length,
         });
 
         // In a real app, you might want to save this vote to the backend
@@ -163,11 +163,16 @@ export default function DebateView({
 
     const getPhaseDisplay = (phase: string) => {
         switch (phase) {
-            case 'opening': return 'Opening Statements';
-            case 'rebuttal': return 'Rebuttals';
-            case 'closing': return 'Closing Arguments';
-            case 'complete': return 'Debate Complete';
-            default: return phase;
+            case 'opening':
+                return 'Opening Statements';
+            case 'rebuttal':
+                return 'Rebuttals';
+            case 'closing':
+                return 'Closing Arguments';
+            case 'complete':
+                return 'Debate Complete';
+            default:
+                return phase;
         }
     };
 
@@ -184,7 +189,8 @@ export default function DebateView({
                             {debate.topic}
                         </h1>
                         <p className="text-gray-600 dark:text-gray-300">
-                            Turn {getCurrentTurnNumber(debate.messages.length)}/4 • {getPhaseDisplay(debate.phase)}
+                            Turn {getCurrentTurnNumber(debate.messages.length)}/4 •{' '}
+                            {getPhaseDisplay(debate.phase)}
                         </p>
                     </div>
                     <button
@@ -202,7 +208,9 @@ export default function DebateView({
                 <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                     <div
                         className="bg-blue-600 h-2 rounded-full transition-all duration-500"
-                        style={{ width: `${(getCurrentTurnNumber(debate.messages.length) / 4) * 100}%` }}
+                        style={{
+                            width: `${(getCurrentTurnNumber(debate.messages.length) / 4) * 100}%`,
+                        }}
                     ></div>
                 </div>
             </div>
@@ -233,7 +241,9 @@ export default function DebateView({
                     <MessageDisplay
                         key={index}
                         message={message}
-                        persona={message.participantId === 'persona1' ? persona1Config : persona2Config}
+                        persona={
+                            message.participantId === 'persona1' ? persona1Config : persona2Config
+                        }
                         isLeft={message.participantId === 'persona1'}
                     />
                 ))}
@@ -250,7 +260,7 @@ export default function DebateView({
                             isGenerating={isGenerating}
                         />
                     )}
-                    
+
                     <div className="text-center">
                         <button
                             onClick={() => {
@@ -276,7 +286,9 @@ export default function DebateView({
                         <div className="flex justify-center gap-4">
                             <button
                                 onClick={() => {
-                                    trackClick('vote_persona1', { personaName: persona1Config.name });
+                                    trackClick('vote_persona1', {
+                                        personaName: persona1Config.name,
+                                    });
                                     handleVote('persona1');
                                 }}
                                 className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
@@ -285,7 +297,9 @@ export default function DebateView({
                             </button>
                             <button
                                 onClick={() => {
-                                    trackClick('vote_persona2', { personaName: persona2Config.name });
+                                    trackClick('vote_persona2', {
+                                        personaName: persona2Config.name,
+                                    });
                                     handleVote('persona2');
                                 }}
                                 className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
@@ -296,8 +310,11 @@ export default function DebateView({
                     ) : (
                         <div className="space-y-2">
                             <p className="text-lg text-gray-900 dark:text-white">
-                                You voted for: <strong>
-                                    {winner === 'persona1' ? persona1Config.name : persona2Config.name}
+                                You voted for:{' '}
+                                <strong>
+                                    {winner === 'persona1'
+                                        ? persona1Config.name
+                                        : persona2Config.name}
                                 </strong>
                             </p>
                             <button

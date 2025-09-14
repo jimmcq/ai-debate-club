@@ -24,21 +24,21 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     static getDerivedStateFromError(error: Error): ErrorBoundaryState {
         return {
             hasError: true,
-            error
+            error,
         };
     }
 
     componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
         this.setState({
             error,
-            errorInfo
+            errorInfo,
         });
 
         // Log error to monitoring service
         logger.fatal('Error boundary caught unhandled error', error, {
             errorBoundary: true,
             componentStack: errorInfo.componentStack,
-            errorInfo
+            errorInfo,
         });
 
         // Call custom error handler if provided
@@ -63,7 +63,8 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
                             Something went wrong
                         </h2>
                         <p className="text-gray-600 dark:text-gray-300 max-w-md">
-                            We encountered an unexpected error. This has been logged and we&apos;re looking into it.
+                            We encountered an unexpected error. This has been logged and we&apos;re
+                            looking into it.
                         </p>
                         <div className="flex gap-3 justify-center">
                             <button

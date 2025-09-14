@@ -21,16 +21,18 @@ export const DEFAULT_RETRY_OPTIONS: RetryOptions = {
     retryCondition: (error: unknown) => {
         // Retry on network errors, 5xx errors, and timeouts
         if (error instanceof Error) {
-            return error.message.includes('fetch') ||
-                   error.message.includes('network') ||
-                   error.message.includes('timeout');
+            return (
+                error.message.includes('fetch') ||
+                error.message.includes('network') ||
+                error.message.includes('timeout')
+            );
         }
         if (typeof error === 'object' && error !== null && 'status' in error) {
             const status = (error as { status: number }).status;
             return status >= 500 || status === 408 || status === 429;
         }
         return false;
-    }
+    },
 };
 
 /**
@@ -43,11 +45,9 @@ const sleep = (ms: number): Promise<void> => {
 /**
  * Calculate delay with exponential backoff and jitter
  */
-function calculateDelay(
-    attemptNumber: number,
-    options: RetryOptions
-): number {
-    const exponentialDelay = options.initialDelay * Math.pow(options.backoffFactor, attemptNumber - 1);
+function calculateDelay(attemptNumber: number, options: RetryOptions): number {
+    const exponentialDelay =
+        options.initialDelay * Math.pow(options.backoffFactor, attemptNumber - 1);
     const cappedDelay = Math.min(exponentialDelay, options.maxDelay);
 
     // Add jitter to prevent thundering herd
@@ -105,47 +105,50 @@ export async function fetchWithRetry(
 ): Promise<Response> {
     const { timeout = 10000, ...fetchOptions } = options;
 
-    return withRetry(async () => {
-        // Create abort controller for timeout
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), timeout);
+    return withRetry(
+        async () => {
+            // Create abort controller for timeout
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), timeout);
 
-        try {
-            const response = await fetch(url, {
-                ...fetchOptions,
-                signal: controller.signal
-            });
-
-            clearTimeout(timeoutId);
-
-            // Throw error for HTTP error status codes
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`, {
-                    cause: { status: response.status, statusText: response.statusText }
+            try {
+                const response = await fetch(url, {
+                    ...fetchOptions,
+                    signal: controller.signal,
                 });
+
+                clearTimeout(timeoutId);
+
+                // Throw error for HTTP error status codes
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`, {
+                        cause: { status: response.status, statusText: response.statusText },
+                    });
+                }
+
+                return response;
+            } catch (error) {
+                clearTimeout(timeoutId);
+
+                if (error instanceof Error && error.name === 'AbortError') {
+                    throw new Error(`Request timeout after ${timeout}ms`, { cause: error });
+                }
+
+                throw error;
             }
-
-            return response;
-        } catch (error) {
-            clearTimeout(timeoutId);
-
-            if (error instanceof Error && error.name === 'AbortError') {
-                throw new Error(`Request timeout after ${timeout}ms`, { cause: error });
-            }
-
-            throw error;
+        },
+        {
+            ...retryOptions,
+            onRetry: (error, attemptNumber) => {
+                console.warn(`API request failed (attempt ${attemptNumber}):`, {
+                    url,
+                    error: error instanceof Error ? error.message : String(error),
+                    timestamp: new Date().toISOString(),
+                });
+                retryOptions.onRetry?.(error, attemptNumber);
+            },
         }
-    }, {
-        ...retryOptions,
-        onRetry: (error, attemptNumber) => {
-            console.warn(`API request failed (attempt ${attemptNumber}):`, {
-                url,
-                error: error instanceof Error ? error.message : String(error),
-                timestamp: new Date().toISOString()
-            });
-            retryOptions.onRetry?.(error, attemptNumber);
-        }
-    });
+    );
 }
 
 /**
@@ -154,7 +157,7 @@ export async function fetchWithRetry(
 export enum CircuitState {
     CLOSED = 'closed',
     OPEN = 'open',
-    HALF_OPEN = 'half-open'
+    HALF_OPEN = 'half-open',
 }
 
 /**
@@ -190,7 +193,7 @@ export class CircuitBreaker {
             failureThreshold: 5,
             recoveryTimeout: 60000, // 1 minute
             monitoringPeriod: 10000, // 10 seconds
-            ...config
+            ...config,
         };
     }
 
@@ -236,9 +239,10 @@ export class CircuitBreaker {
             state: this.state,
             failureCount: this.failures,
             lastFailureTime: this.lastFailureTime ? new Date(this.lastFailureTime) : null,
-            nextAttemptTime: this.state === CircuitState.OPEN
-                ? new Date(this.lastFailureTime + this.config.recoveryTimeout)
-                : null
+            nextAttemptTime:
+                this.state === CircuitState.OPEN
+                    ? new Date(this.lastFailureTime + this.config.recoveryTimeout)
+                    : null,
         };
     }
 

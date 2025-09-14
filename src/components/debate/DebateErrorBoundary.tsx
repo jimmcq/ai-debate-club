@@ -14,7 +14,7 @@ export default function DebateErrorBoundary({ children, onError }: DebateErrorBo
         // Log debate-specific error context
         logger.error('Debate component error', error, {
             component: 'DebateErrorBoundary',
-            debateSystem: true
+            debateSystem: true,
         });
 
         onError?.(error);
@@ -28,7 +28,8 @@ export default function DebateErrorBoundary({ children, onError }: DebateErrorBo
                     Debate Interrupted
                 </h2>
                 <p className="text-lg text-gray-600 dark:text-gray-300 max-w-lg">
-                    We encountered an issue with the debate system. Don&apos;t worry - your progress is safe.
+                    We encountered an issue with the debate system. Don&apos;t worry - your progress
+                    is safe.
                 </p>
                 <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
                     <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
@@ -49,7 +50,7 @@ export default function DebateErrorBoundary({ children, onError }: DebateErrorBo
                         Refresh Debate
                     </button>
                     <button
-                        onClick={() => window.location.href = '/'}
+                        onClick={() => (window.location.href = '/')}
                         className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors duration-200 font-semibold"
                     >
                         Start Over
@@ -69,7 +70,7 @@ export default function DebateErrorBoundary({ children, onError }: DebateErrorBo
 // Specialized error boundary for individual debate components
 export function DebateComponentBoundary({
     children,
-    componentName
+    componentName,
 }: {
     children: ReactNode;
     componentName: string;
@@ -83,16 +84,13 @@ export function DebateComponentBoundary({
                         Component Error
                     </h4>
                     <p className="text-sm text-yellow-700 dark:text-yellow-300">
-                        The {componentName} component encountered an issue. The rest of the debate continues normally.
+                        The {componentName} component encountered an issue. The rest of the debate
+                        continues normally.
                     </p>
                 </div>
             </div>
         </div>
     );
 
-    return (
-        <ErrorBoundary fallback={ComponentFallback}>
-            {children}
-        </ErrorBoundary>
-    );
+    return <ErrorBoundary fallback={ComponentFallback}>{children}</ErrorBoundary>;
 }
