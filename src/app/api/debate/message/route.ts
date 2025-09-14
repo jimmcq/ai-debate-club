@@ -54,10 +54,11 @@ export async function POST(request: NextRequest) {
 
         // Create new message
         const newMessage: DebateMessage = {
+            id: `msg-${Date.now()}`,
             participantId: currentParticipantId,
             content: response,
             turn: debate.currentTurn,
-            timestamp: Date.now(),
+            timestamp: new Date().toISOString(),
         };
 
         // Update debate state

@@ -1,6 +1,14 @@
 // Core debate types based on TDD specifications
 
-export type PersonaType = 'logician' | 'showman' | 'skeptic' | 'optimist';
+export type PersonaType =
+    | 'logician'
+    | 'showman'
+    | 'contrarian'
+    | 'diplomat'
+    | 'philosopher'
+    | 'scientist'
+    | 'lawyer'
+    | 'comedian';
 
 export type DebatePhase = 'opening' | 'rebuttal' | 'closing' | 'complete';
 
@@ -21,10 +29,12 @@ export interface DebateParticipant {
 
 // A single message/argument from a debater
 export interface DebateMessage {
+    id: string;
     participantId: ParticipantId;
     content: string;
     turn: number;
-    timestamp: number;
+    timestamp: string;
+    curveball?: string;
 }
 
 // High-level state for a single debate
@@ -37,6 +47,7 @@ export interface DebateState {
     phase: DebatePhase;
     winner?: ParticipantId;
     curveball?: string;
+    createdAt: string;
 }
 
 // Groq API request/response types

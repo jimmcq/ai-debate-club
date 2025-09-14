@@ -21,7 +21,7 @@ export class GroqAPIError extends Error {
 /**
  * Circuit breaker for Groq API
  */
-const groqCircuitBreaker = new CircuitBreaker(3, 30000); // 3 failures, 30s recovery
+const groqCircuitBreaker = new CircuitBreaker(); // Use default configuration
 
 /**
  * Groq API client configuration

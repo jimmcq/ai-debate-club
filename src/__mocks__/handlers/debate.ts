@@ -4,7 +4,7 @@
  */
 
 import { http, HttpResponse } from 'msw';
-import { DebateState, PersonaType } from '@/lib/types/debate';
+import { DebateState, PersonaType, ParticipantId } from '@/lib/types/debate';
 
 // Mock debate data generator
 export const createMockDebate = (overrides: Partial<DebateState> = {}): DebateState => ({
@@ -80,8 +80,9 @@ export const debateHandlers = [
         // Simulate AI response generation
         const mockMessage = {
             id: `msg-${Date.now()}`,
-            participantId: Math.random() > 0.5 ? 'persona1' : 'persona2',
+            participantId: (Math.random() > 0.5 ? 'persona1' : 'persona2') as ParticipantId,
             content: 'This is a mock AI response for testing purposes.',
+            turn: 2,
             timestamp: new Date().toISOString(),
             curveball: body.curveball,
         };
