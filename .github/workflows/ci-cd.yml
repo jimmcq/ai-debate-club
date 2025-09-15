@@ -5,6 +5,8 @@ on:
     branches: [main, develop]
   pull_request:
     branches: [main, develop]
+  pull_request_target:
+    branches: [main, develop]
 
 env:
   NODE_VERSION: '20'
