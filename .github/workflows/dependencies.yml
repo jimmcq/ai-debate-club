@@ -22,14 +22,11 @@ jobs:
           node-version: '20'
           cache: 'yarn'
 
-      - name: Install yarn-upgrade-all
-        run: yarn global add yarn-upgrade-all
+      - name: Install dependencies
+        run: yarn install
 
       - name: Update dependencies
-        run: yarn upgrade-all
-
-      - name: Install updated dependencies
-        run: yarn install
+        run: yarn upgrade --latest
 
       - name: Run tests
         run: yarn test
