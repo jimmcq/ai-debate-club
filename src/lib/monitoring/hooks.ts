@@ -217,15 +217,18 @@ export function useComponentMonitor(componentName: string) {
             mountTime: mountTime.current,
         });
 
+        // Capture ref values in effect scope to avoid stale closure warning
+        const currentMountTime = mountTime.current;
+        const currentRenderCount = renderCount.current;
+
         return () => {
             const unmountTime = performance.now();
-            const lifespan = mountTime.current ? unmountTime - mountTime.current : 0;
-            const finalRenderCount = renderCount.current;
+            const lifespan = currentMountTime ? unmountTime - currentMountTime : 0;
 
             logger.debug(`Component ${componentName} unmounted after ${Math.round(lifespan)}ms`, {
                 component: componentName,
                 lifespan: Math.round(lifespan),
-                renderCount: finalRenderCount,
+                renderCount: currentRenderCount,
             });
         };
     }, [componentName]);

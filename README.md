@@ -13,7 +13,7 @@ A real-time web application that orchestrates structured debates between two dis
 
 ## Tech Stack
 
-- **Frontend**: Next.js 14 (App Router), React 18, TypeScript
+- **Frontend**: Next.js 15 (App Router), React 19, TypeScript
 - **Backend**: Next.js Route Handlers (Node.js runtime)
 - **LLM Provider**: Groq API (Llama 3.1 8B-Instant)
 - **Styling**: Tailwind CSS
